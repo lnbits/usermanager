@@ -29,3 +29,14 @@ async def m001_initial(db):
         );
     """
     )
+
+
+async def m002_add_user_attrs_column(db):
+    """
+    Initial users table.
+    """
+    await db.execute(
+        """
+        ALTER TABLE usermanager.users ADD COLUMN attrs JSON
+    """
+    )

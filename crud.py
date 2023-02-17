@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional
 
 from lnbits.core.crud import (
@@ -22,10 +23,10 @@ async def create_usermanager_user(data: CreateUserData) -> User:
 
     await db.execute(
         """
-        INSERT INTO usermanager.users (id, name, admin, email, password)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO usermanager.users (id, name, admin, email, password, attrs)
+        VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (user.id, data.user_name, data.admin_id, data.email, data.password),
+        (user.id, data.user_name, data.admin_id, data.email, data.password, json.dumps(data.attrs) if data.attrs else None),
     )
 
     await db.execute(
