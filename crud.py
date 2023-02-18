@@ -26,7 +26,8 @@ async def create_usermanager_user(data: CreateUserData) -> User:
         INSERT INTO usermanager.users (id, name, admin, email, password, attrs)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (user.id, data.user_name, data.admin_id, data.email, data.password, json.dumps(data.attrs) if data.attrs else None),
+        (user.id, data.user_name, data.admin_id, data.email, data.password,
+         json.dumps(data.attrs) if data.attrs else None),
     )
 
     await db.execute(
@@ -51,6 +52,30 @@ async def create_usermanager_user(data: CreateUserData) -> User:
 
 async def get_usermanager_user(user_id: str) -> Optional[User]:
     row = await db.fetchone("SELECT * FROM usermanager.users WHERE id = ?", (user_id,))
+    return User(**row) if row else None
+
+
+async def get_usermanager_user_by(*, attrs: dict, **kwargs) -> Optional[User]:
+    values = []
+    where_stmts = []
+
+    for name, value in kwargs.items():
+        where_stmts.append(f'{name} = ?')
+        values.append(value)
+
+    for name, value in attrs.items():
+        where_stmts.append(
+            f"(attrs ->> '{name}') = ?"
+        )
+        values.append(value)
+
+    row = await db.fetchone(
+        f"""
+        SELECT * FROM usermanager.users 
+        WHERE {' AND '.join(where_stmts)}
+        """,
+        values
+    )
     return User(**row) if row else None
 
 

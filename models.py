@@ -11,7 +11,7 @@ class CreateUserData(BaseModel):
     admin_id: str = Query(...)
     email: str = Query("")
     password: str = Query("")
-    attrs: Optional[dict] = Query(default=None)
+    attrs: Optional[dict[str, str]] = Query(default=None)
 
 
 class CreateUserWallet(BaseModel):
@@ -26,7 +26,7 @@ class User(BaseModel):
     admin: str
     email: Optional[str] = None
     password: Optional[str] = None
-    attrs: Optional[dict]
+    attrs: Optional[dict[str, str]]
 
 class Wallet(BaseModel):
     id: str
