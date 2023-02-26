@@ -11,7 +11,7 @@ from lnbits.core.crud import (
 from lnbits.core.models import Payment
 
 from . import db
-from .models import CreateUserData, User, Wallet
+from .models import CreateUserData, Filter, User, Wallet
 
 
 async def create_usermanager_user(data: CreateUserData) -> User:
@@ -23,11 +23,11 @@ async def create_usermanager_user(data: CreateUserData) -> User:
 
     await db.execute(
         """
-        INSERT INTO usermanager.users (id, name, admin, email, password, attrs)
+        INSERT INTO usermanager.users (id, name, admin, email, password, extra)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
         (user.id, data.user_name, data.admin_id, data.email, data.password,
-         json.dumps(data.attrs) if data.attrs else None),
+         json.dumps(data.extra) if data.extra else None),
     )
 
     await db.execute(
@@ -55,35 +55,21 @@ async def get_usermanager_user(user_id: str) -> Optional[User]:
     return User(**row) if row else None
 
 
-async def get_usermanager_user_by(*, attrs: dict, **kwargs) -> Optional[User]:
-    values = []
-    where_stmts = []
+async def get_usermanager_users(admin: str, *filters: Filter) -> list[User]:
+    values = [admin]
+    where_stmts = ["admin = ?"]
 
-    for name, value in kwargs.items():
-        where_stmts.append(f'{name} = ?')
-        values.append(value)
+    for filter in filters:
+        values.extend(filter.values)
+        where_stmts.append(filter.statement)
 
-    for name, value in attrs.items():
-        where_stmts.append(
-            f"(attrs ->> '{name}') = ?"
-        )
-        values.append(value)
-
-    row = await db.fetchone(
+    rows = await db.fetchall(
         f"""
         SELECT * FROM usermanager.users 
         WHERE {' AND '.join(where_stmts)}
         """,
         values
     )
-    return User(**row) if row else None
-
-
-async def get_usermanager_users(user_id: str) -> List[User]:
-    rows = await db.fetchall(
-        "SELECT * FROM usermanager.users WHERE admin = ?", (user_id,)
-    )
-
     return [User(**row) for row in rows]
 
 

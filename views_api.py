@@ -1,6 +1,9 @@
 from http import HTTPStatus
+from typing import Type
 
+import fastapi
 from fastapi import Depends, Query
+from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 
 from lnbits.core import update_user_extension
@@ -20,15 +23,28 @@ from .crud import (
     get_usermanager_wallet_transactions,
     get_usermanager_wallets,
 )
-from .models import CreateUserData, CreateUserWallet
+from .models import CreateUserData, CreateUserWallet, Filter, UserFilters
+
+
+def get_filter_dependency(model: Type[BaseModel]):
+    def dependency(request: fastapi.Request):
+        filters = []
+        for key in request.query_params.keys():
+            filters.append(
+                Filter.parse_query(key, request.query_params.getlist(key), model)
+            )
+        return filters
+
+    return dependency
 
 
 @usermanager_ext.get("/api/v1/users", status_code=HTTPStatus.OK)
 async def api_usermanager_users(
     wallet: WalletTypeInfo = Depends(require_admin_key),
+    filters: list[Filter] = Depends(get_filter_dependency(UserFilters))
 ):
-    user_id = wallet.wallet.user
-    return [user.dict() for user in await get_usermanager_users(user_id)]
+    admin_id = wallet.wallet.user
+    return [user.dict() for user in await get_usermanager_users(admin_id, *filters)]
 
 
 @usermanager_ext.get(
