@@ -11,10 +11,10 @@ from lnbits.core.crud import (
 from lnbits.core.models import Payment
 
 from . import db
-from .models import CreateUserData, Filter, User, Wallet
+from .models import CreateUserData, Filter, User, UserDetailed, Wallet
 
 
-async def create_usermanager_user(data: CreateUserData) -> User:
+async def create_usermanager_user(data: CreateUserData) -> UserDetailed:
     account = await create_account()
     user = await get_user(account.id)
     assert user, "Newly created user couldn't be retrieved"
@@ -50,9 +50,11 @@ async def create_usermanager_user(data: CreateUserData) -> User:
     return user_created
 
 
-async def get_usermanager_user(user_id: str) -> Optional[User]:
+async def get_usermanager_user(user_id: str) -> Optional[UserDetailed]:
     row = await db.fetchone("SELECT * FROM usermanager.users WHERE id = ?", (user_id,))
-    return User(**row) if row else None
+    if row:
+        wallets = await get_usermanager_users_wallets(user_id)
+        return UserDetailed(**row, wallets=wallets)
 
 
 async def get_usermanager_users(admin: str, *filters: Filter) -> list[User]:

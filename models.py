@@ -76,7 +76,7 @@ class Filter(BaseModel):
         return cls(
             field=field,
             op=op,
-            extras=nested,
+            nested=nested,
             values=values
         )
 
@@ -137,3 +137,8 @@ class Wallet(BaseModel):
     @classmethod
     def from_row(cls, row: Row) -> "Wallet":
         return cls(**dict(row))
+
+
+class UserDetailed(User):
+    wallets: list[Wallet]
+
