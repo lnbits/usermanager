@@ -38,9 +38,12 @@ def get_filter_dependency(model: Type[BaseModel]):
     def dependency(request: fastapi.Request):
         filters = []
         for key in request.query_params.keys():
-            filters.append(
-                Filter.parse_query(key, request.query_params.getlist(key), model)
-            )
+            try:
+                filters.append(
+                    Filter.parse_query(key, request.query_params.getlist(key), model)
+                )
+            except ValueError:
+                continue
         return filters
 
     return dependency
