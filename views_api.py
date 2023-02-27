@@ -38,13 +38,32 @@ def get_filter_dependency(model: Type[BaseModel]):
     return dependency
 
 
-@usermanager_ext.get("/api/v1/users", status_code=HTTPStatus.OK)
+@usermanager_ext.get(
+    "/api/v1/users",
+    status_code=HTTPStatus.OK,
+    response_model=list[User]
+)
 async def api_usermanager_users(
     wallet: WalletTypeInfo = Depends(require_admin_key),
     filters: list[Filter] = Depends(get_filter_dependency(UserFilters))
 ):
+    """
+    Retrieves all users, supporting flexible filtering (LHS Brackets). 
+
+    Syntax: <field>[<op>]=<value>
+
+    Example query params:
+    email[eq]=test@mail.com
+    name[ex]=dont-want&name[ex]=dont-want-too
+    extra.role[ne]=role-id
+
+    Operators:
+    eq, ne, gt, lt, in (include), ex (exclude)
+
+    Fitlers are AND-combined
+    """
     admin_id = wallet.wallet.user
-    return [user.dict() for user in await get_usermanager_users(admin_id, *filters)]
+    return await get_usermanager_users(admin_id, *filters)
 
 
 @usermanager_ext.get(
