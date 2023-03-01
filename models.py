@@ -2,7 +2,7 @@ from sqlite3 import Row
 from typing import Optional
 
 from fastapi.param_functions import Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class CreateUserData(BaseModel):
