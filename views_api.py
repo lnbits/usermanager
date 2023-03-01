@@ -92,7 +92,6 @@ async def api_usermanager_users(
     summary="Get a specific user",
     description="get user",
     response_description="user if user exists",
-    response_model=User,
     dependencies=[Depends(get_key_type)],
     response_model=UserDetailed
 )
@@ -110,6 +109,7 @@ async def api_usermanager_user(user_id):
     description="Create a new user",
     response_description="New User",
     response_model=UserDetailed,
+)
 async def api_usermanager_users_create(data: CreateUserData):
     return await create_usermanager_user(data)
 
