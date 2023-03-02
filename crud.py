@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional
 
 from lnbits.core.crud import (
@@ -10,10 +11,10 @@ from lnbits.core.crud import (
 from lnbits.core.models import Payment
 
 from . import db
-from .models import CreateUserData, User, Wallet
+from .models import CreateUserData, Filter, User, UserDetailed, Wallet
 
 
-async def create_usermanager_user(data: CreateUserData) -> User:
+async def create_usermanager_user(data: CreateUserData) -> UserDetailed:
     account = await create_account()
     user = await get_user(account.id)
     assert user, "Newly created user couldn't be retrieved"
@@ -22,10 +23,11 @@ async def create_usermanager_user(data: CreateUserData) -> User:
 
     await db.execute(
         """
-        INSERT INTO usermanager.users (id, name, admin, email, password)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO usermanager.users (id, name, admin, email, password, extra)
+        VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (user.id, data.user_name, data.admin_id, data.email, data.password),
+        (user.id, data.user_name, data.admin_id, data.email, data.password,
+         json.dumps(data.extra) if data.extra else None),
     )
 
     await db.execute(
@@ -48,16 +50,28 @@ async def create_usermanager_user(data: CreateUserData) -> User:
     return user_created
 
 
-async def get_usermanager_user(user_id: str) -> Optional[User]:
+async def get_usermanager_user(user_id: str) -> Optional[UserDetailed]:
     row = await db.fetchone("SELECT * FROM usermanager.users WHERE id = ?", (user_id,))
-    return User(**row) if row else None
+    if row:
+        wallets = await get_usermanager_users_wallets(user_id)
+        return UserDetailed(**row, wallets=wallets)
 
 
-async def get_usermanager_users(user_id: str) -> List[User]:
+async def get_usermanager_users(admin: str, *filters: Filter) -> list[User]:
+    values = [admin]
+    where_stmts = ["admin = ?"]
+
+    for filter in filters:
+        values.extend(filter.values)
+        where_stmts.append(filter.statement)
+
     rows = await db.fetchall(
-        "SELECT * FROM usermanager.users WHERE admin = ?", (user_id,)
+        f"""
+        SELECT * FROM usermanager.users 
+        WHERE {' AND '.join(where_stmts)}
+        """,
+        values
     )
-
     return [User(**row) for row in rows]
 
 
