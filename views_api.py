@@ -6,7 +6,7 @@ from starlette.exceptions import HTTPException
 
 from lnbits.core import update_user_extension
 from lnbits.core.crud import get_user
-from lnbits.core.models import Payment, User
+from lnbits.core.models import Payment
 from lnbits.decorators import WalletTypeInfo, get_key_type, require_admin_key
 
 from . import usermanager_ext
@@ -22,7 +22,7 @@ from .crud import (
     get_usermanager_wallet_transactions,
     get_usermanager_wallets,
 )
-from .models import CreateUserData, CreateUserWallet, Wallet
+from .models import CreateUserData, CreateUserWallet, User, Wallet
 
 
 @usermanager_ext.get(
