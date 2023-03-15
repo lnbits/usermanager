@@ -123,14 +123,14 @@ async def api_usermanager_activate_extension(
     name="Create wallet for user",
     summary="Create wallet for user",
     description="Create wallet for user",
-    response_model=User,
+    response_model=Wallet,
     dependencies=[Depends(get_key_type)],
 )
 async def api_usermanager_wallets_create(data: CreateUserWallet) -> Any:
-    user = await create_usermanager_wallet(
+    wallet = await create_usermanager_wallet(
         user_id=data.user_id, wallet_name=data.wallet_name, admin_id=data.admin_id
     )
-    return user.dict()
+    return wallet.dict()
 
 
 @usermanager_ext.get(
@@ -178,8 +178,8 @@ async def api_usermanager_users_wallets(user_id):
     name="Delete wallet by id",
     summary="Delete wallet by id",
     description="Delete wallet by id",
-    response_model=str,
     dependencies=[Depends(require_admin_key)],
+    responses={404: {"description": "Wallet does not exist."}},
 )
 async def api_usermanager_wallets_delete(wallet_id):
     get_wallet = await get_usermanager_wallet(wallet_id)
