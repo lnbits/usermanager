@@ -9,9 +9,10 @@ from lnbits.core.crud import (
     get_user,
 )
 from lnbits.core.models import Payment
+from lnbits.db import Filters
 
 from . import db
-from .models import CreateUserData, Filter, User, UserDetailed, Wallet
+from .models import CreateUserData, User, UserDetailed, UserFilters, Wallet
 
 
 async def create_usermanager_user(data: CreateUserData) -> UserDetailed:
@@ -57,20 +58,14 @@ async def get_usermanager_user(user_id: str) -> Optional[UserDetailed]:
         return UserDetailed(**row, wallets=wallets)
 
 
-async def get_usermanager_users(admin: str, *filters: Filter) -> list[User]:
-    values = [admin]
-    where_stmts = ["admin = ?"]
-
-    for filter in filters:
-        values.extend(filter.values)
-        where_stmts.append(filter.statement)
-
+async def get_usermanager_users(admin: str, filters: Filters[UserFilters]) -> list[User]:
     rows = await db.fetchall(
         f"""
-        SELECT * FROM usermanager.users 
-        WHERE {' AND '.join(where_stmts)}
+        SELECT * FROM usermanager.users
+        {filters.where(["admin = ?"])}
+        {filters.pagination()}
         """,
-        values
+        filters.values([admin])
     )
     return [User(**row) for row in rows]
 

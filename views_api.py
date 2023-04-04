@@ -1,16 +1,20 @@
 from http import HTTPStatus
-from typing import Any, List, Tuple, Optional, Type
+from typing import Any, List
 
-import fastapi
 from fastapi import Depends, Query
-from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 
-from lnbits.core import Payment, update_user_extension
+from lnbits.core import update_user_extension
 from lnbits.core.crud import get_user
-from lnbits.core.models import Payment, User
-from lnbits.decorators import WalletTypeInfo, get_key_type, require_admin_key
-
+from lnbits.core.models import Payment
+from lnbits.db import Filters
+from lnbits.decorators import (
+    WalletTypeInfo,
+    get_key_type,
+    parse_filters,
+    require_admin_key,
+)
+from lnbits.helpers import generate_filter_params_openapi
 from . import usermanager_ext
 from .crud import (
     create_usermanager_user,
@@ -27,27 +31,11 @@ from .crud import (
 from .models import (
     CreateUserData,
     CreateUserWallet,
-    Filter,
     User,
     UserDetailed,
     UserFilters,
     Wallet,
 )
-
-
-def get_filter_dependency(model: Type[BaseModel]):
-    def dependency(request: fastapi.Request):
-        filters = []
-        for key in request.query_params.keys():
-            try:
-                filters.append(
-                    Filter.parse_query(key, request.query_params.getlist(key), model)
-                )
-            except ValueError:
-                continue
-        return filters
-
-    return dependency
 
 
 @usermanager_ext.get(
@@ -57,10 +45,11 @@ def get_filter_dependency(model: Type[BaseModel]):
     summary="get list of users",
     response_description="list of users",
     response_model=List[User],
+    openapi_extra=generate_filter_params_openapi(UserFilters),
 )
 async def api_usermanager_users(
     wallet: WalletTypeInfo = Depends(require_admin_key),
-    filters: list[Filter] = Depends(get_filter_dependency(UserFilters))
+    filters: Filters[UserFilters] = Depends(parse_filters(UserFilters))
 ):
     """
     Retrieves all users, supporting flexible filtering (LHS Brackets).
@@ -83,7 +72,7 @@ async def api_usermanager_users(
     Fitlers are AND-combined
     """
     admin_id = wallet.wallet.user
-    return await get_usermanager_users(admin_id, *filters)
+    return await get_usermanager_users(admin_id, filters)
 
 
 @usermanager_ext.get(
@@ -173,7 +162,6 @@ async def api_usermanager_wallets_create(data: CreateUserWallet) -> Any:
     return await create_usermanager_wallet(
         user_id=data.user_id, wallet_name=data.wallet_name, admin_id=data.admin_id
     )
-
 
 
 @usermanager_ext.get(
