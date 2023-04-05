@@ -1,8 +1,35 @@
+from enum import Enum
 from sqlite3 import Row
-from typing import Optional
+from typing import Any, Optional, Type
 
 from fastapi.param_functions import Query
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+
+
+class Operator(Enum):
+    GT = "gt"
+    LT = "lt"
+    EQ = "eq"
+    NE = "ne"
+    INCLUDE = "in"
+    EXCLUDE = "ex"
+
+    @property
+    def as_sql(self):
+        if self == Operator.EQ:
+            return "="
+        elif self == Operator.NE:
+            return "!="
+        elif self == Operator.INCLUDE:
+            return "IN"
+        elif self == Operator.EXCLUDE:
+            return "NOT IN"
+        elif self == Operator.GT:
+            return ">"
+        elif self == Operator.LT:
+            return "<"
+        else:
+            raise ValueError('Unknown')
 
 
 class CreateUserData(BaseModel):
@@ -11,6 +38,7 @@ class CreateUserData(BaseModel):
     admin_id: str = Query(..., description="Id of the user which will administer this new user")
     email: str = Query("")
     password: str = Query("")
+    extra: Optional[dict[str, str]] = Query(default=None)
 
 
 class CreateUserWallet(BaseModel):
@@ -25,6 +53,14 @@ class User(BaseModel):
     admin: str
     email: Optional[str] = None
     password: Optional[str] = None
+    extra: Optional[dict[str, str]]
+
+
+class UserFilters(BaseModel):
+    id: str
+    name: str
+    email: Optional[str] = None
+    extra: Optional[dict[str, str]]
 
 
 class Wallet(BaseModel):
@@ -38,3 +74,7 @@ class Wallet(BaseModel):
     @classmethod
     def from_row(cls, row: Row) -> "Wallet":
         return cls(**dict(row))
+
+
+class UserDetailed(User):
+    wallets: list[Wallet]
