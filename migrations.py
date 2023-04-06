@@ -6,9 +6,9 @@ async def m001_initial(db):
         """
         CREATE TABLE usermanager.users (
             id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
+            name TEXT NOT NULL UNIQUE,
             admin TEXT NOT NULL,
-            email TEXT,
+            email TEXT UNIQUE,
             password TEXT
         );
     """
