@@ -318,7 +318,6 @@
         if (this.userDialog.data.id) {
         } else {
           var data = {
-            admin_id: this.g.user.id,
             user_name: this.userDialog.data.usrname,
             wallet_name: this.userDialog.data.walname,
             email: this.userDialog.data.email,
@@ -337,7 +336,7 @@
           .request(
             'POST',
             '/usermanager/api/v1/users',
-            this.g.user.wallets[0].inkey,
+            this.g.user.wallets[0].adminkey,
             data
           )
           .then(function (response) {

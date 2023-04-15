@@ -1,9 +1,11 @@
 from enum import Enum
 from sqlite3 import Row
-from typing import Any, Optional, Type
+from typing import Optional
 
 from fastapi.param_functions import Query
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
+
+from lnbits.db import FilterModel
 
 
 class Operator(Enum):
@@ -35,10 +37,15 @@ class Operator(Enum):
 class CreateUserData(BaseModel):
     user_name: str = Query(..., description="Name of the user")
     wallet_name: str = Query(..., description="Name of the user")
-    admin_id: str = Query(..., description="Id of the user which will administer this new user")
+    #admin_id: str = Query(..., description="Id of the user which will administer this new user")
     email: str = Query("")
     password: str = Query("")
     extra: Optional[dict[str, str]] = Query(default=None)
+
+
+class UpdateUserData(BaseModel):
+    user_name: Optional[str] = Query(default=None, description="Name of the user")
+    extra: Optional[dict[str, str]] = Query(default=None, description='Partial update for extra field')
 
 
 class CreateUserWallet(BaseModel):
@@ -56,7 +63,7 @@ class User(BaseModel):
     extra: Optional[dict[str, str]]
 
 
-class UserFilters(BaseModel):
+class UserFilters(FilterModel):
     id: str
     name: str
     email: Optional[str] = None
