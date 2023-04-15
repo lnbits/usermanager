@@ -27,6 +27,7 @@ from .crud import (
     get_usermanager_wallet,
     get_usermanager_wallet_transactions,
     get_usermanager_wallets,
+    update_usermanager_user,
 )
 from .models import (
     CreateUserData,
@@ -35,6 +36,7 @@ from .models import (
     UserDetailed,
     UserFilters,
     Wallet,
+    UpdateUserData,
 )
 
 
@@ -84,7 +86,7 @@ async def api_usermanager_users(
     dependencies=[Depends(get_key_type)],
     response_model=UserDetailed
 )
-async def api_usermanager_user(user_id):
+async def api_usermanager_user(user_id: str):
     user = await get_usermanager_user(user_id)
     if not user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='User not found')
@@ -99,8 +101,27 @@ async def api_usermanager_user(user_id):
     response_description="New User",
     response_model=UserDetailed,
 )
-async def api_usermanager_users_create(data: CreateUserData):
-    return await create_usermanager_user(data)
+async def api_usermanager_users_create(
+    data: CreateUserData,
+    info: WalletTypeInfo = Depends(require_admin_key)
+):
+    return await create_usermanager_user(info.wallet.user, data)
+
+
+@usermanager_ext.patch(
+    "/api/v1/users/{user_id}",
+    name="User Update",
+    summary="Update a user",
+    description="Update a user",
+    response_description="Updated user",
+    response_model=UserDetailed,
+)
+async def api_usermanager_users_create(
+    user_id: str,
+    data: UpdateUserData,
+    info: WalletTypeInfo = Depends(require_admin_key)
+):
+    return await update_usermanager_user(user_id, info.wallet.user, data)
 
 
 @usermanager_ext.delete(
