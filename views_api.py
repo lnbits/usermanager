@@ -15,6 +15,7 @@ from lnbits.decorators import (
     require_admin_key,
 )
 from lnbits.helpers import generate_filter_params_openapi
+
 from . import usermanager_ext
 from .crud import (
     create_usermanager_user,
@@ -32,11 +33,11 @@ from .crud import (
 from .models import (
     CreateUserData,
     CreateUserWallet,
+    UpdateUserData,
     User,
     UserDetailed,
     UserFilters,
     Wallet,
-    UpdateUserData,
 )
 
 

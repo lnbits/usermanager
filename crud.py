@@ -9,9 +9,17 @@ from lnbits.core.crud import (
     get_user,
 )
 from lnbits.core.models import Payment
-from lnbits.db import Filters, POSTGRES
+from lnbits.db import POSTGRES, Filters
+
 from . import db
-from .models import CreateUserData, User, UserDetailed, UserFilters, Wallet, UpdateUserData
+from .models import (
+    CreateUserData,
+    UpdateUserData,
+    User,
+    UserDetailed,
+    UserFilters,
+    Wallet,
+)
 
 
 async def create_usermanager_user(admin_id: str, data: CreateUserData) -> UserDetailed:
