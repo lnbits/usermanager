@@ -135,7 +135,7 @@ async def delete_usermanager_wallet(wallet_id: str, user_id: str) -> None:
     await db.execute("DELETE FROM usermanager.wallets WHERE id = ?", (wallet_id,))
 
 
-async def update_usermanager_user(user_id: str, admin_id: str, data: UpdateUserData) -> None:
+async def update_usermanager_user(user_id: str, admin_id: str, data: UpdateUserData) -> UserDetailed:
     cols = []
     values = []
     if data.user_name:
