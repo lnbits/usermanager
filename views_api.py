@@ -109,7 +109,7 @@ async def api_usermanager_users_create(
     return await create_usermanager_user(info.wallet.user, data)
 
 
-@usermanager_ext.patch(
+@usermanager_ext.put(
     "/api/v1/users/{user_id}",
     name="User Update",
     summary="Update a user",
