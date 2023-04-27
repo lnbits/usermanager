@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, List
+from typing import List
 
 from fastapi import Depends, Query
 from starlette.exceptions import HTTPException
@@ -53,7 +53,7 @@ from .models import (
 async def api_usermanager_users(
     wallet: WalletTypeInfo = Depends(require_admin_key),
     filters: Filters[UserFilters] = Depends(parse_filters(UserFilters))
-):
+) -> List[User]:
     """
     Retrieves all users, supporting flexible filtering (LHS Brackets).
 
@@ -87,7 +87,7 @@ async def api_usermanager_users(
     dependencies=[Depends(get_key_type)],
     response_model=UserDetailed
 )
-async def api_usermanager_user(user_id: str):
+async def api_usermanager_user(user_id: str) -> UserDetailed:
     user = await get_usermanager_user(user_id)
     if not user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='User not found')
@@ -105,7 +105,7 @@ async def api_usermanager_user(user_id: str):
 async def api_usermanager_users_create(
     data: CreateUserData,
     info: WalletTypeInfo = Depends(require_admin_key)
-):
+) -> UserDetailed:
     return await create_usermanager_user(info.wallet.user, data)
 
 
@@ -121,7 +121,7 @@ async def api_usermanager_users_create(
     user_id: str,
     data: UpdateUserData,
     info: WalletTypeInfo = Depends(require_admin_key)
-):
+) -> UserDetailed:
     return await update_usermanager_user(user_id, info.wallet.user, data)
 
 
@@ -132,18 +132,18 @@ async def api_usermanager_users_create(
     description="Delete a user",
     dependencies=[Depends(require_admin_key)],
     responses={404: {"description": "User does not exist."}},
+    status_code=HTTPStatus.OK,
 )
 async def api_usermanager_users_delete(
     user_id,
     delete_core: bool = Query(True),
-) -> Any:
+) -> None:
     user = await get_usermanager_user(user_id)
     if not user:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="User does not exist."
         )
     await delete_usermanager_user(user_id, delete_core)
-    return "", HTTPStatus.NO_CONTENT
 
 
 # Activate Extension
@@ -159,7 +159,7 @@ async def api_usermanager_users_delete(
 )
 async def api_usermanager_activate_extension(
     extension: str = Query(...), userid: str = Query(...), active: bool = Query(...)
-):
+) -> dict:
     user = await get_user(userid)
     if not user:
         raise HTTPException(
@@ -180,7 +180,7 @@ async def api_usermanager_activate_extension(
     response_model=Wallet,
     dependencies=[Depends(get_key_type)],
 )
-async def api_usermanager_wallets_create(data: CreateUserWallet) -> Any:
+async def api_usermanager_wallets_create(data: CreateUserWallet) -> Wallet:
     return await create_usermanager_wallet(
         user_id=data.user_id, wallet_name=data.wallet_name, admin_id=data.admin_id
     )
@@ -195,7 +195,7 @@ async def api_usermanager_wallets_create(data: CreateUserWallet) -> Any:
 )
 async def api_usermanager_wallets(
     wallet: WalletTypeInfo = Depends(require_admin_key),
-) -> Any:
+) -> List[Wallet]:
     admin_id = wallet.wallet.user
     return await get_usermanager_wallets(admin_id)
 
@@ -208,7 +208,7 @@ async def api_usermanager_wallets(
     response_model=List[Payment],
     dependencies=[Depends(get_key_type)],
 )
-async def api_usermanager_wallet_transactions(wallet_id):
+async def api_usermanager_wallet_transactions(wallet_id) -> List[Payment]:
     return await get_usermanager_wallet_transactions(wallet_id)
 
 
@@ -220,7 +220,7 @@ async def api_usermanager_wallet_transactions(wallet_id):
     response_model=List[Wallet],
     dependencies=[Depends(require_admin_key)],
 )
-async def api_usermanager_users_wallets(user_id):
+async def api_usermanager_users_wallets(user_id) -> List[Wallet]:
     return await get_usermanager_users_wallets(user_id)
 
 
@@ -231,12 +231,12 @@ async def api_usermanager_users_wallets(user_id):
     description="Delete wallet by id",
     response_model=str,
     dependencies=[Depends(require_admin_key)],
+    status_code=HTTPStatus.OK,
 )
-async def api_usermanager_wallets_delete(wallet_id):
+async def api_usermanager_wallets_delete(wallet_id) -> None:
     get_wallet = await get_usermanager_wallet(wallet_id)
     if not get_wallet:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="Wallet does not exist."
         )
     await delete_usermanager_wallet(wallet_id, get_wallet.user)
-    return "", HTTPStatus.NO_CONTENT
