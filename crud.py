@@ -9,13 +9,20 @@ from lnbits.core.crud import (
     get_user,
 )
 from lnbits.core.models import Payment
-from lnbits.db import Filters
+from lnbits.db import POSTGRES, Filters
 
 from . import db
-from .models import CreateUserData, User, UserDetailed, UserFilters, Wallet
+from .models import (
+    CreateUserData,
+    UpdateUserData,
+    User,
+    UserDetailed,
+    UserFilters,
+    Wallet,
+)
 
 
-async def create_usermanager_user(data: CreateUserData) -> UserDetailed:
+async def create_usermanager_user(admin_id: str, data: CreateUserData) -> UserDetailed:
     account = await create_account()
     user = await get_user(account.id)
     assert user, "Newly created user couldn't be retrieved"
@@ -27,7 +34,7 @@ async def create_usermanager_user(data: CreateUserData) -> UserDetailed:
         INSERT INTO usermanager.users (id, name, admin, email, password, extra)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (user.id, data.user_name, data.admin_id, data.email, data.password,
+        (user.id, data.user_name, admin_id, data.email, data.password,
          json.dumps(data.extra) if data.extra else None),
     )
 
@@ -38,7 +45,7 @@ async def create_usermanager_user(data: CreateUserData) -> UserDetailed:
         """,
         (
             wallet.id,
-            data.admin_id,
+            admin_id,
             data.wallet_name,
             user.id,
             wallet.adminkey,
@@ -126,3 +133,28 @@ async def get_usermanager_wallet_transactions(wallet_id: str) -> List[Payment]:
 async def delete_usermanager_wallet(wallet_id: str, user_id: str) -> None:
     await delete_wallet(user_id=user_id, wallet_id=wallet_id)
     await db.execute("DELETE FROM usermanager.wallets WHERE id = ?", (wallet_id,))
+
+
+async def update_usermanager_user(user_id: str, admin_id: str, data: UpdateUserData) -> None:
+    cols = []
+    values = []
+    if data.user_name:
+        cols.append("name = ?")
+        values.append(data.user_name)
+    if data.extra:
+        if db.type == POSTGRES:
+            cols.append("extra = extra::jsonb || ?")
+        else:
+            cols.append("extra = json_patch(extra, ?)")
+        values.append(json.dumps(data.extra))
+    values.append(user_id)
+    values.append(admin_id)
+    await db.execute(
+        f"""
+        UPDATE usermanager.users
+        SET {", ".join(cols)}
+        WHERE id = ? AND admin = ?
+        """,
+        values
+    )
+    return await get_usermanager_user(user_id)
