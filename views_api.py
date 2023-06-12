@@ -2,6 +2,7 @@ from http import HTTPStatus
 from typing import List
 
 from fastapi import Depends, Query
+from pydantic import Json
 from starlette.exceptions import HTTPException
 
 from lnbits.core import update_user_extension
@@ -52,30 +53,20 @@ from .models import (
 )
 async def api_usermanager_users(
     wallet: WalletTypeInfo = Depends(require_admin_key),
-    filters: Filters[UserFilters] = Depends(parse_filters(UserFilters))
-) -> List[User]:
-    """
-    Retrieves all users, supporting flexible filtering (LHS Brackets).
-
-    ### Syntax
-    `field[op]=value`
-
-    ### Example Query Strings
-    ```
-    email[eq]=test@mail.com
-    name[ex]=dont-want&name[ex]=dont-want-too
-    extra.role[ne]=role-id
-    ```
-    ### Operators
-    - eq, ne
-    - gt, lt
-    - in (include)
-    - ex (exclude)
-
-    Fitlers are AND-combined
-    """
+    filters: Filters[UserFilters] = Depends(parse_filters(UserFilters)),
+    extra: Json = Query(None, description="Can be used to filter users by extra fields"),
+):
     admin_id = wallet.wallet.user
-    return await get_usermanager_users(admin_id, filters)
+    users = await get_usermanager_users(admin_id, filters)
+    if extra:
+        return [
+            user for user in users
+            if all(
+                user.extra and user.extra.get(key) == value
+                for key, value in extra.items()
+            )
+        ]
+    return users
 
 
 @usermanager_ext.get(
