@@ -51,7 +51,6 @@ class UpdateUserData(BaseModel):
 class CreateUserWallet(BaseModel):
     user_id: str = Query(..., description="Target user for this new wallet")
     wallet_name: str = Query(..., description="Name of the new wallet to create")
-    admin_id: str = Query(..., description="Id of the user which will administer this new wallet")
 
 
 class User(BaseModel):
