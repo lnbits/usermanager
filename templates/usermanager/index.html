@@ -26,7 +26,6 @@
           </div>
         </div>
         <q-table
-          dense
           flat
           :data="users"
           row-key="id"
@@ -77,7 +76,6 @@
           </div>
         </div>
         <q-table
-          dense
           flat
           :data="wallets"
           row-key="id"
@@ -88,6 +86,7 @@
           <template v-slot:header="props">
             <q-tr :props="props">
               <q-th auto-width></q-th>
+              <q-th auto-width></q-th>
               <q-th v-for="col in props.cols" :key="col.name" :props="props">
                 {{ col.label }}
               </q-th>
@@ -96,6 +95,16 @@
           </template>
           <template v-slot:body="props">
             <q-tr :props="props">
+              <q-td auto-width>
+                <q-btn
+                  size="sm"
+                  color="accent"
+                  round
+                  dense
+                  @click="props.expand = !props.expand"
+                  :icon="props.expand ? 'remove' : 'add'"
+                />
+              </q-td>
               <q-td auto-width>
                 <q-btn
                   unelevated
@@ -121,6 +130,38 @@
                   icon="cancel"
                   color="pink"
                 ></q-btn>
+              </q-td>
+            </q-tr>
+            <!-- Show LNDhub QR on expand -->
+            <q-tr v-show="props.expand" :props="props">
+              <q-td colspan="100%">
+                <div class="row">
+                  <div
+                    class="col-12 col-md-6 q-pa-md"
+                    v-for="type in ['inkey', 'adminkey']"
+                    v-bind:key="type"
+                    style="max-width: 250px"
+                  >
+                    <div class="text-center">
+                      <q-responsive :ratio="1" class="q-mx-sm">
+                        <qrcode
+                          :value="`lndhub://${type == 'inkey' ? 'invoice' : 'admin'}:${props.row[type]}@${location.protocol}//${location.host}/lndhub/ext/`"
+                          :options="{width: 800}"
+                          class="rounded-borders"
+                        ></qrcode>
+                      </q-responsive>
+                    </div>
+                    <div class="row q-mt-lg items-center justify-center">
+                      <q-btn
+                        outline
+                        color="grey"
+                        @click="copyText(`lndhub://${type == 'inkey' ? 'invoice' : 'admin'}:${props.row[type]}@${location.protocol}//${location.host}/lndhub/ext/`)"
+                        class="text-center q-mb-md"
+                        >Copy LndHub {{ type }} URL</q-btn
+                      >
+                    </div>
+                  </div>
+                </div>
               </q-td>
             </q-tr>
           </template>
@@ -216,6 +257,8 @@
 </div>
 {% endblock %} {% block scripts %} {{ window_vars(user) }}
 <script>
+  Vue.component(VueQrcode.name, VueQrcode)
+
   var mapUserManager = function (obj) {
     obj.date = Quasar.utils.date.formatDate(
       new Date(obj.time * 1000),
@@ -234,7 +277,8 @@
       return {
         wallets: [],
         users: [],
-
+        tab: 'inkey',
+        location: location,
         usersTable: {
           columns: [
             {name: 'id', align: 'left', label: 'ID', field: 'id'},
