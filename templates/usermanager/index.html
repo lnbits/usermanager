@@ -85,7 +85,7 @@
           {% raw %}
           <template v-slot:header="props">
             <q-tr :props="props">
-              <q-th v-if="hasLndhub" auto-width>LndHub</q-th>
+              <q-th v-if="hasLndhub" auto-width></q-th>
               <q-th auto-width></q-th>
               <q-th v-for="col in props.cols" :key="col.name" :props="props">
                 {{ col.label }}
@@ -104,12 +104,13 @@
                   @click="props.expand = !props.expand"
                   :icon="props.expand ? 'remove' : 'add'"
                 />
+                <q-tooltip> LndHub links </q-tooltip>
               </q-td>
               <q-td auto-width>
                 <q-btn
                   unelevated
                   dense
-                  size="xs"
+                  size="sm"
                   icon="account_balance_wallet"
                   :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
                   type="a"
