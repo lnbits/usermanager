@@ -85,7 +85,7 @@
           {% raw %}
           <template v-slot:header="props">
             <q-tr :props="props">
-              <q-th auto-width></q-th>
+              <q-th v-if="hasLndhub" auto-width>LndHub</q-th>
               <q-th auto-width></q-th>
               <q-th v-for="col in props.cols" :key="col.name" :props="props">
                 {{ col.label }}
@@ -95,7 +95,7 @@
           </template>
           <template v-slot:body="props">
             <q-tr :props="props">
-              <q-td auto-width>
+              <q-td auto-width v-if="hasLndhub">
                 <q-btn
                   size="sm"
                   color="accent"
@@ -279,6 +279,7 @@
         users: [],
         tab: 'inkey',
         location: location,
+        hasLndhub: false,
         usersTable: {
           columns: [
             {name: 'id', align: 'left', label: 'ID', field: 'id'},
@@ -325,7 +326,6 @@
     computed: {
       userOptions: function () {
         return this.users.map(function (obj) {
-          console.log(obj.id)
           return {
             value: String(obj.id),
             label: String(obj.id)
@@ -397,7 +397,6 @@
       deleteUser: function (userId) {
         var self = this
 
-        console.log(userId)
         LNbits.utils
           .confirmDialog('Are you sure you want to delete this User link?')
           .onOk(function () {
@@ -510,6 +509,9 @@
       if (this.g.user.wallets.length) {
         this.getUsers()
         this.getWallets()
+      }
+      if (this.g.user.extensions.includes('lndhub')) {
+        this.hasLndhub = true
       }
     }
   })
