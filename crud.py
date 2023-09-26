@@ -62,7 +62,9 @@ async def get_usermanager_user(user_id: str) -> Optional[UserDetailed]:
     row = await db.fetchone("SELECT * FROM usermanager.users WHERE id = ?", (user_id,))
     if row:
         wallets = await get_usermanager_users_wallets(user_id)
-        return UserDetailed(**row, wallets=wallets)
+        attrs = dict(row)
+        attrs["extra"] = json.loads(attrs["extra"]) if attrs["extra"] else None
+        return UserDetailed(**attrs, wallets=wallets)
 
 
 async def get_usermanager_users(admin: str, filters: Filters[UserFilters]) -> list[User]:
@@ -74,7 +76,7 @@ async def get_usermanager_users(admin: str, filters: Filters[UserFilters]) -> li
         """,
         filters.values([admin])
     )
-    return [User(**row) for row in rows]
+    return [User.from_row(row) for row in rows]
 
 
 async def delete_usermanager_user(user_id: str, delete_core: bool = True) -> None:
@@ -142,11 +144,11 @@ async def update_usermanager_user(user_id: str, admin_id: str, data: UpdateUserD
         cols.append("name = ?")
         values.append(data.user_name)
     if data.extra:
-        if db.type == POSTGRES:
-            cols.append("extra = extra::jsonb || ?")
-        else:
-            cols.append("extra = json_patch(extra, ?)")
-        values.append(json.dumps(data.extra))
+        extra = await db.fetchone("SELECT extra FROM usermanager.users WHERE id = ?", (user_id,))
+        extra = json.loads(extra[0]) if extra[0] else {}
+        extra.update(data.extra)
+        cols.append("extra = ?")
+        values.append(json.dumps(extra))
     values.append(user_id)
     values.append(admin_id)
     await db.execute(

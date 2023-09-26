@@ -1,4 +1,4 @@
-from enum import Enum
+import json
 from sqlite3 import Row
 from typing import Optional
 
@@ -8,36 +8,9 @@ from pydantic import BaseModel
 from lnbits.db import FilterModel
 
 
-class Operator(Enum):
-    GT = "gt"
-    LT = "lt"
-    EQ = "eq"
-    NE = "ne"
-    INCLUDE = "in"
-    EXCLUDE = "ex"
-
-    @property
-    def as_sql(self):
-        if self == Operator.EQ:
-            return "="
-        elif self == Operator.NE:
-            return "!="
-        elif self == Operator.INCLUDE:
-            return "IN"
-        elif self == Operator.EXCLUDE:
-            return "NOT IN"
-        elif self == Operator.GT:
-            return ">"
-        elif self == Operator.LT:
-            return "<"
-        else:
-            raise ValueError('Unknown')
-
-
 class CreateUserData(BaseModel):
     user_name: str = Query(..., description="Name of the user")
     wallet_name: str = Query(..., description="Name of the user")
-    #admin_id: str = Query(..., description="Id of the user which will administer this new user")
     email: str = Query("")
     password: str = Query("")
     extra: Optional[dict[str, str]] = Query(default=None)
@@ -62,12 +35,17 @@ class User(BaseModel):
     password: Optional[str] = None
     extra: Optional[dict[str, str]]
 
+    @classmethod
+    def from_row(cls, row: Row):
+        attrs = dict(row)
+        attrs["extra"] = json.loads(attrs["extra"]) if attrs["extra"] else None
+        return cls(**attrs)
+
 
 class UserFilters(FilterModel):
     id: str
     name: str
     email: Optional[str] = None
-    extra: Optional[dict[str, str]]
 
 
 class Wallet(BaseModel):

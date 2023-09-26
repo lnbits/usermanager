@@ -37,6 +37,6 @@ async def m002_add_user_attrs_column(db):
     """
     await db.execute(
         """
-        ALTER TABLE usermanager.users ADD COLUMN extra JSON
+        ALTER TABLE usermanager.users ADD COLUMN extra TEXT
     """
     )
