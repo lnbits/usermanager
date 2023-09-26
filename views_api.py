@@ -171,9 +171,11 @@ async def api_usermanager_activate_extension(
     response_model=Wallet,
     dependencies=[Depends(get_key_type)],
 )
-async def api_usermanager_wallets_create(data: CreateUserWallet) -> Wallet:
+async def api_usermanager_wallets_create(
+    data: CreateUserWallet, wallet: WalletTypeInfo = Depends(require_admin_key)
+) -> Wallet:
     return await create_usermanager_wallet(
-        user_id=data.user_id, wallet_name=data.wallet_name, admin_id=data.admin_id
+        user_id=data.user_id, wallet_name=data.wallet_name, admin_id=wallet.wallet.user
     )
 
 

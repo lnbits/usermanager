@@ -451,7 +451,6 @@
         } else {
           var data = {
             user_id: this.walletDialog.data.user,
-            admin_id: this.g.user.id,
             wallet_name: this.walletDialog.data.walname
           }
         }
@@ -467,7 +466,7 @@
           .request(
             'POST',
             '/usermanager/api/v1/wallets',
-            this.g.user.wallets[0].inkey,
+            this.g.user.wallets[0].adminkey,
             data
           )
           .then(function (response) {
