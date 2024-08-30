@@ -10,7 +10,7 @@ from lnbits.db import FilterModel
 
 class CreateUserData(BaseModel):
     user_name: str = Query(..., description="Name of the user")
-    wallet_name: str = Query(..., description="Name of the user")
+    wallet_name: str = Query(..., description="Name of the wallet")
     email: str = Query("")
     password: str = Query("")
     extra: Optional[dict[str, str]] = Query(default=None)
