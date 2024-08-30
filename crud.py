@@ -23,7 +23,7 @@ from .models import (
 
 
 async def create_usermanager_user(admin_id: str, data: CreateUserData) -> UserDetailed:
-    account = await create_account()
+    account = await create_account(username=data.user_name, email=data.email, password=data.password)
     user = await get_user(account.id)
     assert user, "Newly created user couldn't be retrieved"
 
