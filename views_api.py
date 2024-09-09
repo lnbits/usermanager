@@ -10,9 +10,9 @@ from lnbits.core.models import Payment
 from lnbits.db import Filters
 from lnbits.decorators import (
     WalletTypeInfo,
-    get_key_type,
     parse_filters,
     require_admin_key,
+    require_invoice_key,
 )
 from lnbits.helpers import generate_filter_params_openapi
 
@@ -77,7 +77,7 @@ async def api_usermanager_users(
     summary="Get a specific user",
     description="get user",
     response_description="user if user exists",
-    dependencies=[Depends(get_key_type)],
+    dependencies=[Depends(require_invoice_key)],
     response_model=UserDetailed,
 )
 async def api_usermanager_user(user_id: str) -> UserDetailed:
@@ -170,7 +170,7 @@ async def api_usermanager_activate_extension(
     summary="Create wallet for user",
     description="Create wallet for user",
     response_model=Wallet,
-    dependencies=[Depends(get_key_type)],
+    dependencies=[Depends(require_invoice_key)],
 )
 async def api_usermanager_wallets_create(
     data: CreateUserWallet, wallet: WalletTypeInfo = Depends(require_admin_key)
@@ -200,7 +200,7 @@ async def api_usermanager_wallets(
     summary="Get all wallet transactions",
     description="Get all wallet transactions",
     response_model=List[Payment],
-    dependencies=[Depends(get_key_type)],
+    dependencies=[Depends(require_invoice_key)],
 )
 async def api_usermanager_wallet_transactions(wallet_id) -> List[Payment]:
     return await get_usermanager_wallet_transactions(wallet_id)
