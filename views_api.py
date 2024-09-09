@@ -53,13 +53,16 @@ from .models import (
 async def api_usermanager_users(
     wallet: WalletTypeInfo = Depends(require_admin_key),
     filters: Filters[UserFilters] = Depends(parse_filters(UserFilters)),
-    extra: Json = Query(None, description="Can be used to filter users by extra fields"),
+    extra: Json = Query(
+        None, description="Can be used to filter users by extra fields"
+    ),
 ):
     admin_id = wallet.wallet.user
     users = await get_usermanager_users(admin_id, filters)
     if extra:
         return [
-            user for user in users
+            user
+            for user in users
             if all(
                 user.extra and user.extra.get(key) == value
                 for key, value in extra.items()
@@ -75,12 +78,12 @@ async def api_usermanager_users(
     description="get user",
     response_description="user if user exists",
     dependencies=[Depends(get_key_type)],
-    response_model=UserDetailed
+    response_model=UserDetailed,
 )
 async def api_usermanager_user(user_id: str) -> UserDetailed:
     user = await get_usermanager_user(user_id)
     if not user:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='User not found')
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="User not found")
     return user
 
 
@@ -93,8 +96,7 @@ async def api_usermanager_user(user_id: str) -> UserDetailed:
     response_model=UserDetailed,
 )
 async def api_usermanager_users_create(
-    data: CreateUserData,
-    info: WalletTypeInfo = Depends(require_admin_key)
+    data: CreateUserData, info: WalletTypeInfo = Depends(require_admin_key)
 ) -> UserDetailed:
     return await create_usermanager_user(info.wallet.user, data)
 
@@ -107,10 +109,10 @@ async def api_usermanager_users_create(
     response_description="Updated user",
     response_model=UserDetailed,
 )
-async def api_usermanager_users_create(
+async def api_usermanager_users_update(
     user_id: str,
     data: UpdateUserData,
-    info: WalletTypeInfo = Depends(require_admin_key)
+    info: WalletTypeInfo = Depends(require_admin_key),
 ) -> UserDetailed:
     return await update_usermanager_user(user_id, info.wallet.user, data)
 
