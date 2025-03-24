@@ -3,22 +3,21 @@ from sqlite3 import Row
 from typing import Optional
 
 from fastapi.param_functions import Query
-from pydantic import BaseModel
-
 from lnbits.db import FilterModel
+from pydantic import BaseModel
 
 
 class CreateUserData(BaseModel):
     user_name: str = Query(..., description="Name of the user")
     wallet_name: str = Query(..., description="Name of the wallet")
-    email: str = Query("")
-    password: str = Query("")
     extra: Optional[dict[str, str]] = Query(default=None)
 
 
 class UpdateUserData(BaseModel):
     user_name: Optional[str] = Query(default=None, description="Name of the user")
-    extra: Optional[dict[str, str]] = Query(default=None, description='Partial update for extra field')
+    extra: Optional[dict[str, str]] = Query(
+        default=None, description="Partial update for extra field"
+    )
 
 
 class CreateUserWallet(BaseModel):
@@ -30,9 +29,7 @@ class User(BaseModel):
     id: str
     name: str
     admin: str
-    email: Optional[str] = None
-    password: Optional[str] = None
-    extra: Optional[dict[str, str]]
+    extra: str
 
     @classmethod
     def from_row(cls, row: Row):

@@ -1,11 +1,15 @@
 from fastapi import APIRouter
+from loguru import logger
 
-from lnbits.db import Database
-from lnbits.helpers import template_renderer
+from .crud import db
+from .views import usermanager_generic_router
+from .views_api import usermanager_api_router
 
-db = Database("ext_usermanager")
+logger.debug("usermanager ext running.")
 
 usermanager_ext: APIRouter = APIRouter(prefix="/usermanager", tags=["usermanager"])
+usermanager_ext.include_router(usermanager_generic_router)
+usermanager_ext.include_router(usermanager_api_router)
 
 usermanager_static_files = [
     {
@@ -14,10 +18,8 @@ usermanager_static_files = [
     }
 ]
 
-
-def usermanager_renderer():
-    return template_renderer(["usermanager/templates"])
-
-
-from .views import *  # noqa
-from .views_api import *  # noqa
+__all__ = [
+    "db",
+    "usermanager_ext",
+    "usermanager_static_files",
+]

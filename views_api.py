@@ -1,10 +1,7 @@
 from http import HTTPStatus
 from typing import List
 
-from fastapi import Depends, Query
-from pydantic import Json
-from starlette.exceptions import HTTPException
-
+from fastapi import APIRouter, Depends, Query
 from lnbits.core.crud import get_user, update_user_extension
 from lnbits.core.models import Payment
 from lnbits.db import Filters
@@ -15,8 +12,9 @@ from lnbits.decorators import (
     require_invoice_key,
 )
 from lnbits.helpers import generate_filter_params_openapi
+from pydantic import Json
+from starlette.exceptions import HTTPException
 
-from . import usermanager_ext
 from .crud import (
     create_usermanager_user,
     create_usermanager_wallet,
@@ -40,8 +38,10 @@ from .models import (
     Wallet,
 )
 
+usermanager_api_router = APIRouter()
 
-@usermanager_ext.get(
+
+@usermanager_api_router.get(
     "/api/v1/users",
     status_code=HTTPStatus.OK,
     name="User List",
@@ -52,7 +52,7 @@ from .models import (
 )
 async def api_usermanager_users(
     wallet: WalletTypeInfo = Depends(require_admin_key),
-    filters: Filters[UserFilters] = Depends(parse_filters(UserFilters)),
+    filters: Filters[UserFilters] = Depends(lambda: parse_filters(UserFilters)),
     extra: Json = Query(
         None, description="Can be used to filter users by extra fields"
     ),
@@ -71,7 +71,7 @@ async def api_usermanager_users(
     return users
 
 
-@usermanager_ext.get(
+@usermanager_api_router.get(
     "/api/v1/users/{user_id}",
     name="User Get",
     summary="Get a specific user",
@@ -87,7 +87,7 @@ async def api_usermanager_user(user_id: str) -> UserDetailed:
     return user
 
 
-@usermanager_ext.post(
+@usermanager_api_router.post(
     "/api/v1/users",
     name="User Create",
     summary="Create a new user",
@@ -101,7 +101,7 @@ async def api_usermanager_users_create(
     return await create_usermanager_user(info.wallet.user, data)
 
 
-@usermanager_ext.put(
+@usermanager_api_router.put(
     "/api/v1/users/{user_id}",
     name="User Update",
     summary="Update a user",
@@ -117,7 +117,7 @@ async def api_usermanager_users_update(
     return await update_usermanager_user(user_id, info.wallet.user, data)
 
 
-@usermanager_ext.delete(
+@usermanager_api_router.delete(
     "/api/v1/users/{user_id}",
     name="User Delete",
     summary="Delete a user",
@@ -138,10 +138,7 @@ async def api_usermanager_users_delete(
     await delete_usermanager_user(user_id, delete_core)
 
 
-# Activate Extension
-
-
-@usermanager_ext.post(
+@usermanager_api_router.post(
     "/api/v1/extensions",
     name="Extension Toggle",
     summary="Extension Toggle",
@@ -161,10 +158,7 @@ async def api_usermanager_activate_extension(
     return {"extension": "updated"}
 
 
-# Wallets
-
-
-@usermanager_ext.post(
+@usermanager_api_router.post(
     "/api/v1/wallets",
     name="Create wallet for user",
     summary="Create wallet for user",
@@ -180,7 +174,7 @@ async def api_usermanager_wallets_create(
     )
 
 
-@usermanager_ext.get(
+@usermanager_api_router.get(
     "/api/v1/wallets",
     name="Get all user wallets",
     summary="Get all user wallets",
@@ -194,7 +188,7 @@ async def api_usermanager_wallets(
     return await get_usermanager_wallets(admin_id)
 
 
-@usermanager_ext.get(
+@usermanager_api_router.get(
     "/api/v1/transactions/{wallet_id}",
     name="Get all wallet transactions",
     summary="Get all wallet transactions",
@@ -206,7 +200,7 @@ async def api_usermanager_wallet_transactions(wallet_id) -> List[Payment]:
     return await get_usermanager_wallet_transactions(wallet_id)
 
 
-@usermanager_ext.get(
+@usermanager_api_router.get(
     "/api/v1/wallets/{user_id}",
     name="Get user wallet",
     summary="Get user wallet",
@@ -218,12 +212,12 @@ async def api_usermanager_users_wallets(user_id) -> List[Wallet]:
     return await get_usermanager_users_wallets(user_id)
 
 
-@usermanager_ext.delete(
+@usermanager_api_router.delete(
     "/api/v1/wallets/{wallet_id}",
     name="Delete wallet by id",
     summary="Delete wallet by id",
     description="Delete wallet by id",
-    response_model=str,
+    response_model=None,
     dependencies=[Depends(require_admin_key)],
     status_code=HTTPStatus.OK,
 )
@@ -234,3 +228,4 @@ async def api_usermanager_wallets_delete(wallet_id) -> None:
             status_code=HTTPStatus.NOT_FOUND, detail="Wallet does not exist."
         )
     await delete_usermanager_wallet(wallet_id, get_wallet.user)
+    return None

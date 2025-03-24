@@ -1,5 +1,7 @@
 {% extends "base.html" %} {% from "macros.jinja" import window_vars with context
-%} {% block page %}
+%} {% block scripts %} {{ window_vars(user) }}
+<script src="{{ static_url_for('usermanager/static', path='js/index.js') }}"></script>
+{% endblock %} {% block page %}
 <div class="row q-col-gutter-md">
   <div class="col-12 col-md-8 col-lg-7 q-gutter-y-md">
     <q-card>
@@ -7,7 +9,11 @@
         <q-btn unelevated color="primary" @click="userDialog.show = true"
           >New User</q-btn
         >
-        <q-btn unelevated color="primary" @click="walletDialog.show = true"
+        <q-btn
+          unelevated
+          color="primary"
+          @click="walletDialog.show = true"
+          class="q-ml-md"
           >New Wallet
         </q-btn>
       </q-card-section>
@@ -27,16 +33,15 @@
         </div>
         <q-table
           flat
-          :data="users"
+          :rows="users"
           row-key="id"
           :columns="usersTable.columns"
-          :pagination.sync="usersTable.pagination"
+          v-model:pagination="usersTable.pagination"
         >
-          {% raw %}
           <template v-slot:header="props">
             <q-tr :props="props">
               <q-th v-for="col in props.cols" :key="col.name" :props="props">
-                {{ col.label }}
+                ${ col.label }
               </q-th>
               <q-th auto-width></q-th>
             </q-tr>
@@ -44,7 +49,7 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
-                {{ col.value }}
+                ${ col.value }
               </q-td>
               <q-td auto-width>
                 <q-btn
@@ -58,7 +63,6 @@
               </q-td>
             </q-tr>
           </template>
-          {% endraw %}
         </q-table>
       </q-card-section>
     </q-card>
@@ -77,18 +81,17 @@
         </div>
         <q-table
           flat
-          :data="wallets"
+          :rows="wallets"
           row-key="id"
           :columns="walletsTable.columns"
-          :pagination.sync="walletsTable.pagination"
+          v-model:pagination="walletsTable.pagination"
         >
-          {% raw %}
           <template v-slot:header="props">
             <q-tr :props="props">
               <q-th v-if="hasLndhub" auto-width></q-th>
               <q-th auto-width></q-th>
               <q-th v-for="col in props.cols" :key="col.name" :props="props">
-                {{ col.label }}
+                ${ col.label }
               </q-th>
               <q-th auto-width></q-th>
             </q-tr>
@@ -114,13 +117,13 @@
                   icon="account_balance_wallet"
                   :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
                   type="a"
-                  :href="props.row.walllink"
+                  :href="['../wallet?usr=', props.row.user, '&wal=', props.row.id].join('')"
                   target="_blank"
                 ></q-btn>
                 <q-tooltip> Link to wallet </q-tooltip>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
-                {{ col.value }}
+                ${ col.value }
               </q-td>
               <q-td auto-width>
                 <q-btn
@@ -133,7 +136,6 @@
                 ></q-btn>
               </q-td>
             </q-tr>
-            <!-- Show LNDhub QR on expand -->
             <q-tr v-show="props.expand" :props="props">
               <q-td colspan="100%">
                 <div class="row">
@@ -145,11 +147,11 @@
                   >
                     <div class="text-center">
                       <q-responsive :ratio="1" class="q-mx-sm">
-                        <qrcode
+                        <lnbits-qrcode
                           :value="`lndhub://${type == 'inkey' ? 'invoice' : 'admin'}:${props.row[type]}@${location.protocol}//${location.host}/lndhub/ext/`"
                           :options="{width: 800}"
                           class="rounded-borders"
-                        ></qrcode>
+                        ></lnbits-qrcode>
                       </q-responsive>
                     </div>
                     <div class="row q-mt-lg items-center justify-center">
@@ -158,7 +160,7 @@
                         color="grey"
                         @click="copyText(`lndhub://${type == 'inkey' ? 'invoice' : 'admin'}:${props.row[type]}@${location.protocol}//${location.host}/lndhub/ext/`)"
                         class="text-center q-mb-md"
-                        >Copy LndHub {{ type }} URL</q-btn
+                        >Copy LndHub <span v-text="type"></span> URL</q-btn
                       >
                     </div>
                   </div>
@@ -166,7 +168,6 @@
               </q-td>
             </q-tr>
           </template>
-          {% endraw %}
         </q-table>
       </q-card-section>
     </q-card>
@@ -204,14 +205,14 @@
         <q-input
           filled
           dense
-          v-model.trim="userDialog.data.email"
-          label="Email"
+          v-model.trim="userDialog.data.extra1"
+          label="Extra1"
         ></q-input>
         <q-input
           filled
           dense
-          v-model.trim="userDialog.data.password"
-          label="Password"
+          v-model.trim="userDialog.data.extra2"
+          label="Extra2"
         ></q-input>
 
         <q-btn
@@ -256,264 +257,4 @@
     </q-card>
   </q-dialog>
 </div>
-{% endblock %} {% block scripts %} {{ window_vars(user) }}
-<script>
-  Vue.component(VueQrcode.name, VueQrcode)
-
-  var mapUserManager = function (obj) {
-    obj.date = Quasar.utils.date.formatDate(
-      new Date(obj.time * 1000),
-      'YYYY-MM-DD HH:mm'
-    )
-    obj.fsat = new Intl.NumberFormat(LOCALE).format(obj.amount)
-    obj.walllink = ['../wallet?usr=', obj.user, '&wal=', obj.id].join('')
-    obj._data = _.clone(obj)
-    return obj
-  }
-
-  new Vue({
-    el: '#vue',
-    mixins: [windowMixin],
-    data: function () {
-      return {
-        wallets: [],
-        users: [],
-        tab: 'inkey',
-        location: location,
-        hasLndhub: false,
-        usersTable: {
-          columns: [
-            {name: 'id', align: 'left', label: 'ID', field: 'id'},
-            {name: 'name', align: 'left', label: 'Username', field: 'name'},
-            {name: 'email', align: 'left', label: 'Email', field: 'email'},
-            {
-              name: 'password',
-              align: 'left',
-              label: 'Password',
-              field: 'password'
-            }
-          ],
-          pagination: {
-            rowsPerPage: 10
-          }
-        },
-        walletsTable: {
-          columns: [
-            {name: 'id', align: 'left', label: 'ID', field: 'id'},
-            {name: 'name', align: 'left', label: 'Name', field: 'name'},
-            {name: 'user', align: 'left', label: 'User', field: 'user'},
-            {
-              name: 'adminkey',
-              align: 'left',
-              label: 'Admin Key',
-              field: 'adminkey'
-            },
-            {name: 'inkey', align: 'left', label: 'Invoice Key', field: 'inkey'}
-          ],
-          pagination: {
-            rowsPerPage: 10
-          }
-        },
-        walletDialog: {
-          show: false,
-          data: {}
-        },
-        userDialog: {
-          show: false,
-          data: {}
-        }
-      }
-    },
-    computed: {
-      userOptions: function () {
-        return this.users.map(function (obj) {
-          return {
-            value: String(obj.id),
-            label: String(obj.id)
-          }
-        })
-      }
-    },
-    methods: {
-      ///////////////Users////////////////////////////
-
-      getUsers: function () {
-        var self = this
-
-        LNbits.api
-          .request(
-            'GET',
-            '/usermanager/api/v1/users',
-            this.g.user.wallets[0].adminkey
-          )
-          .then(function (response) {
-            self.users = response.data.map(function (obj) {
-              return mapUserManager(obj)
-            })
-          })
-      },
-
-      openUserUpdateDialog: function (linkId) {
-        var link = _.findWhere(this.users, {id: linkId})
-
-        this.userDialog.data = _.clone(link._data)
-        this.userDialog.show = true
-      },
-      sendUserFormData: function () {
-        if (this.userDialog.data.id) {
-        } else {
-          var data = {
-            user_name: this.userDialog.data.usrname,
-            wallet_name: this.userDialog.data.walname,
-            email: this.userDialog.data.email,
-            password: this.userDialog.data.password
-          }
-        }
-
-        {
-          this.createUser(data)
-        }
-      },
-
-      createUser: function (data) {
-        var self = this
-        LNbits.api
-          .request(
-            'POST',
-            '/usermanager/api/v1/users',
-            this.g.user.wallets[0].adminkey,
-            data
-          )
-          .then(function (response) {
-            self.users.push(mapUserManager(response.data))
-            self.userDialog.show = false
-            self.userDialog.data = {}
-            data = {}
-            self.getWallets()
-          })
-          .catch(function (error) {
-            LNbits.utils.notifyApiError(error)
-          })
-      },
-      deleteUser: function (userId) {
-        var self = this
-
-        LNbits.utils
-          .confirmDialog('Are you sure you want to delete this User link?')
-          .onOk(function () {
-            LNbits.api
-              .request(
-                'DELETE',
-                '/usermanager/api/v1/users/' + userId,
-                self.g.user.wallets[0].adminkey
-              )
-              .then(function (response) {
-                self.users = _.reject(self.users, function (obj) {
-                  return obj.id == userId
-                })
-                self.getWallets()
-              })
-              .catch(function (error) {
-                LNbits.utils.notifyApiError(error)
-              })
-          })
-      },
-
-      exportUsersCSV: function () {
-        LNbits.utils.exportCSV(this.usersTable.columns, this.users)
-      },
-
-      ///////////////Wallets////////////////////////////
-
-      getWallets: function () {
-        var self = this
-
-        LNbits.api
-          .request(
-            'GET',
-            '/usermanager/api/v1/wallets',
-            this.g.user.wallets[0].adminkey
-          )
-          .then(function (response) {
-            self.wallets = response.data.map(function (obj) {
-              return mapUserManager(obj)
-            })
-          })
-      },
-      openWalletUpdateDialog: function (linkId) {
-        var link = _.findWhere(this.users, {id: linkId})
-
-        this.walletDialog.data = _.clone(link._data)
-        this.walletDialog.show = true
-      },
-      sendWalletFormData: function () {
-        if (this.walletDialog.data.id) {
-        } else {
-          var data = {
-            user_id: this.walletDialog.data.user,
-            wallet_name: this.walletDialog.data.walname
-          }
-        }
-
-        {
-          this.createWallet(data)
-        }
-      },
-
-      createWallet: function (data) {
-        var self = this
-        LNbits.api
-          .request(
-            'POST',
-            '/usermanager/api/v1/wallets',
-            this.g.user.wallets[0].adminkey,
-            data
-          )
-          .then(function (response) {
-            self.wallets.push(mapUserManager(response.data))
-            self.walletDialog.show = false
-            self.walletDialog.data = {}
-            data = {}
-          })
-          .catch(function (error) {
-            LNbits.utils.notifyApiError(error)
-          })
-      },
-      deleteWallet: function (userId) {
-        var self = this
-
-        LNbits.utils
-          .confirmDialog('Are you sure you want to delete this wallet link?')
-          .onOk(function () {
-            LNbits.api
-              .request(
-                'DELETE',
-                '/usermanager/api/v1/wallets/' + userId,
-                self.g.user.wallets[0].adminkey
-              )
-              .then(function (response) {
-                self.wallets = _.reject(self.wallets, function (obj) {
-                  return obj.id == userId
-                })
-              })
-              .catch(function (error) {
-                LNbits.utils.notifyApiError(error)
-              })
-          })
-      },
-      exportWalletsCSV: function () {
-        LNbits.utils.exportCSV(this.walletsTable.columns, this.wallets)
-      }
-    },
-    created: function () {
-      if (this.g.user.wallets.length) {
-        this.getUsers()
-        this.getWallets()
-      }
-      if (this.g.user.extensions.includes('lndhub')) {
-        this.hasLndhub = true
-      }
-    }
-  })
-</script>
 {% endblock %}
