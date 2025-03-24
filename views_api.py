@@ -10,9 +10,9 @@ from lnbits.core.models import Payment
 from lnbits.db import Filters
 from lnbits.decorators import (
     WalletTypeInfo,
-    get_key_type,
     parse_filters,
     require_admin_key,
+    require_invoice_key,
 )
 from lnbits.helpers import generate_filter_params_openapi
 
@@ -53,13 +53,16 @@ from .models import (
 async def api_usermanager_users(
     wallet: WalletTypeInfo = Depends(require_admin_key),
     filters: Filters[UserFilters] = Depends(parse_filters(UserFilters)),
-    extra: Json = Query(None, description="Can be used to filter users by extra fields"),
+    extra: Json = Query(
+        None, description="Can be used to filter users by extra fields"
+    ),
 ):
     admin_id = wallet.wallet.user
     users = await get_usermanager_users(admin_id, filters)
     if extra:
         return [
-            user for user in users
+            user
+            for user in users
             if all(
                 user.extra and user.extra.get(key) == value
                 for key, value in extra.items()
@@ -74,13 +77,13 @@ async def api_usermanager_users(
     summary="Get a specific user",
     description="get user",
     response_description="user if user exists",
-    dependencies=[Depends(get_key_type)],
-    response_model=UserDetailed
+    dependencies=[Depends(require_invoice_key)],
+    response_model=UserDetailed,
 )
 async def api_usermanager_user(user_id: str) -> UserDetailed:
     user = await get_usermanager_user(user_id)
     if not user:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='User not found')
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="User not found")
     return user
 
 
@@ -93,8 +96,7 @@ async def api_usermanager_user(user_id: str) -> UserDetailed:
     response_model=UserDetailed,
 )
 async def api_usermanager_users_create(
-    data: CreateUserData,
-    info: WalletTypeInfo = Depends(require_admin_key)
+    data: CreateUserData, info: WalletTypeInfo = Depends(require_admin_key)
 ) -> UserDetailed:
     return await create_usermanager_user(info.wallet.user, data)
 
@@ -107,10 +109,10 @@ async def api_usermanager_users_create(
     response_description="Updated user",
     response_model=UserDetailed,
 )
-async def api_usermanager_users_create(
+async def api_usermanager_users_update(
     user_id: str,
     data: UpdateUserData,
-    info: WalletTypeInfo = Depends(require_admin_key)
+    info: WalletTypeInfo = Depends(require_admin_key),
 ) -> UserDetailed:
     return await update_usermanager_user(user_id, info.wallet.user, data)
 
@@ -168,7 +170,7 @@ async def api_usermanager_activate_extension(
     summary="Create wallet for user",
     description="Create wallet for user",
     response_model=Wallet,
-    dependencies=[Depends(get_key_type)],
+    dependencies=[Depends(require_invoice_key)],
 )
 async def api_usermanager_wallets_create(
     data: CreateUserWallet, wallet: WalletTypeInfo = Depends(require_admin_key)
@@ -198,7 +200,7 @@ async def api_usermanager_wallets(
     summary="Get all wallet transactions",
     description="Get all wallet transactions",
     response_model=List[Payment],
-    dependencies=[Depends(get_key_type)],
+    dependencies=[Depends(require_invoice_key)],
 )
 async def api_usermanager_wallet_transactions(wallet_id) -> List[Payment]:
     return await get_usermanager_wallet_transactions(wallet_id)
