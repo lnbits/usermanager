@@ -2,34 +2,33 @@ import json
 from sqlite3 import Row
 from typing import Optional
 
-from fastapi.param_functions import Query
 from lnbits.db import FilterModel
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CreateUserData(BaseModel):
-    user_name: str = Query(..., description="Name of the user")
-    wallet_name: str = Query(..., description="Name of the wallet")
-    extra: Optional[dict[str, str]] = Query(default=None)
+    user_name: str = Field(..., description="Name of the user")
+    wallet_name: str = Field(..., description="Name of the wallet")
+    extra: Optional[dict[str, str]] = Field(default=None)
 
 
 class UpdateUserData(BaseModel):
-    user_name: Optional[str] = Query(default=None, description="Name of the user")
-    extra: Optional[dict[str, str]] = Query(
+    user_name: Optional[str] = Field(default=None, description="Name of the user")
+    extra: Optional[dict[str, str]] = Field(
         default=None, description="Partial update for extra field"
     )
 
 
 class CreateUserWallet(BaseModel):
-    user_id: str = Query(..., description="Target user for this new wallet")
-    wallet_name: str = Query(..., description="Name of the new wallet to create")
+    user_id: str = Field(..., description="Target user for this new wallet")
+    wallet_name: str = Field(..., description="Name of the new wallet to create")
 
 
 class User(BaseModel):
     id: str
     name: str
     admin: str
-    extra: str
+    extra: Optional[dict[str, str]] = Field(default=None)
 
     @classmethod
     def from_row(cls, row: Row):

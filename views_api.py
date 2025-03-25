@@ -40,6 +40,8 @@ from .models import (
 
 usermanager_api_router = APIRouter()
 
+user_filters_dep = parse_filters(UserFilters)
+
 
 @usermanager_api_router.get(
     "/api/v1/users",
@@ -52,7 +54,7 @@ usermanager_api_router = APIRouter()
 )
 async def api_usermanager_users(
     wallet: WalletTypeInfo = Depends(require_admin_key),
-    filters: Filters[UserFilters] = Depends(lambda: parse_filters(UserFilters)),
+    filters: Filters[UserFilters] = Depends(user_filters_dep),
     extra: Json = Query(
         None, description="Can be used to filter users by extra fields"
     ),
