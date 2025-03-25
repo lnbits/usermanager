@@ -1,7 +1,7 @@
 {
   "name": "Usermanger",
   "short_description": "Users managing users/wallets",
-  "tile": "https://raw.githubusercontent.com/lnbits/usermanager/refs/heads/main/static/image/usermanager.png",
+  "tile": "/usermanager/static/image/usermanager.png",
   "min_lnbits_version": "1.0.0",
   "contributors": [
     {
