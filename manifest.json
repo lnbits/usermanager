@@ -1,14 +1,9 @@
 {
-  "extensions": [
+  "repos": [
     {
       "id": "usermanager",
-      "repo": "https://github.com/lnbits/usermanager-extension",
-      "name": "User Manager",
-      "version": "0.3",
-      "short_description": "Generate users and wallets",
-      "icon": "https://raw.githubusercontent.com/lnbits/usermanager-extension/main/static/image/usermanager.png",
-      "archive": "https://github.com/lnbits/lnbits-extensions/raw/main/extensions/usermanager/usermanager-extension.zip",
-      "hash": "6d0d990f0c987ad7f98ba610424dd977179827234619bf5ff3428f0a065ed7f6"
+      "organisation": "lnbits",
+      "repository": "usermanager"
     }
   ]
 }
