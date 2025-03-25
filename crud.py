@@ -9,7 +9,6 @@ from lnbits.core.views.user_api import (
     api_users_delete_user_wallet,
 )
 from lnbits.db import Database, Filters
-from loguru import logger
 
 from .models import (
     CreateUserData,
@@ -31,9 +30,21 @@ async def create_usermanager_user(admin_id: str, data: CreateUserData) -> UserDe
         id=wallet.user,
         name=data.user_name,
         admin=admin_id,
-        extra=str(data.extra) if data.extra else None,
+        extra=data.extra,
     )
-    await db.insert("usermanager.users", user_data)
+
+    await db.execute(
+        """
+        INSERT INTO usermanager.users (id, name, admin, extra)
+        VALUES (:id, :name, :admin, :extra)
+        """,
+        {
+            "id": user_data.id,
+            "name": user_data.name,
+            "admin": user_data.admin,
+            "extra": json.dumps(user_data.extra),  # Needed for adding as json
+        },
+    )
 
     wallet_data = Wallet(
         id=wallet.id,
@@ -51,12 +62,12 @@ async def create_usermanager_user(admin_id: str, data: CreateUserData) -> UserDe
 
 
 async def get_usermanager_user(user_id: str) -> Optional[UserDetailed]:
-    user_data = await db.fetchone(
+    row = await db.fetchone(
         "SELECT * FROM usermanager.users WHERE id = :id", {"id": user_id}
     )
     wallets = await get_usermanager_users_wallets(user_id=user_id)
-    logger.debug(user_data)
-    if user_data:
+    if row:
+        user_data = User.from_row(row)
         return UserDetailed(
             id=user_data.id,
             name=user_data.name,
@@ -70,17 +81,18 @@ async def get_usermanager_user(user_id: str) -> Optional[UserDetailed]:
 async def get_usermanager_users(
     admin: str, filters: Filters[UserFilters]
 ) -> list[User]:
-    return await db.fetchall(
+    rows = await db.fetchall(
         f"SELECT * FROM usermanager.users WHERE admin = :admin {filters.pagination()}",
         {"admin": admin},
     )
+    return [User.from_row(row) for row in rows]
 
 
 async def delete_usermanager_user(user_id: str, delete_core: bool = True) -> None:
     if delete_core:
         wallets = await get_usermanager_wallets(user_id)
         for wallet in wallets:
-            await api_users_delete_user_wallet(user_id=user_id, wallet_id=wallet.id)
+            await api_users_delete_user_wallet(user_id=user_id, wallet=wallet.id)
     await db.execute("DELETE FROM usermanager.users WHERE id = :id", {"id": user_id})
     await db.execute(
         "DELETE FROM usermanager.wallets WHERE user = :user", {"user": user_id}
