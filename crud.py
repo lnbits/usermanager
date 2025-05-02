@@ -1,10 +1,11 @@
 import json
+from sqlite3 import Row
 from typing import List, Optional
 
 from lnbits.core.crud import get_payments
 from lnbits.core.models import CreateWallet, Payment
 from lnbits.core.views.api import api_create_account
-from lnbits.core.views.user_api import (
+from lnbits.core.views.user_api import (  # type: ignore
     api_users_create_user_wallet,
     api_users_delete_user_wallet,
 )
@@ -62,7 +63,7 @@ async def create_usermanager_user(admin_id: str, data: CreateUserData) -> UserDe
 
 
 async def get_usermanager_user(user_id: str) -> Optional[UserDetailed]:
-    row = await db.fetchone(
+    row: Row = await db.fetchone(
         "SELECT * FROM usermanager.users WHERE id = :id", {"id": user_id}
     )
     wallets = await get_usermanager_users_wallets(user_id=user_id)
@@ -81,7 +82,7 @@ async def get_usermanager_user(user_id: str) -> Optional[UserDetailed]:
 async def get_usermanager_users(
     admin: str, filters: Filters[UserFilters]
 ) -> list[User]:
-    rows = await db.fetchall(
+    rows: list[Row] = await db.fetchall(
         f"SELECT * FROM usermanager.users WHERE admin = :admin {filters.pagination()}",
         {"admin": admin},
     )
@@ -154,27 +155,27 @@ async def delete_usermanager_wallet(wallet_id: str, user_id: str) -> None:
 
 async def update_usermanager_user(
     user_id: str, admin_id: str, data: UpdateUserData
-) -> UserDetailed:
+) -> Optional[UserDetailed]:
     cols = []
-    values = []
+    values = {}
     if data.user_name:
-        cols.append("name = ?")
-        values.append(data.user_name)
+        cols.append("name = :name")
+        values["name"] = data.user_name
     if data.extra:
-        extra = await db.fetchone(
+        row: Row = await db.fetchone(
             "SELECT extra FROM usermanager.users WHERE id = :id", {"id": user_id}
         )
-        extra = json.loads(extra[0]) if extra[0] else {}
+        extra = json.loads(row["extra"]) if row["extra"] else {}
         extra.update(data.extra)
-        cols.append("extra = ?")
-        values.append(json.dumps(extra))
-    values.append(user_id)
-    values.append(admin_id)
+        cols.append("extra = :extra")
+        values["extra"] = json.dumps(extra)
+    values["user_id"] = user_id
+    values["admin_id"] = admin_id
     await db.execute(
         f"""
         UPDATE usermanager.users
         SET {", ".join(cols)}
-        WHERE id = ? AND admin = ?
+        WHERE id = :user_id AND admin = :admin_id
         """,
         values,
     )

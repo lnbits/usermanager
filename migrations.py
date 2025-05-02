@@ -57,7 +57,8 @@ async def m003_migrate_email_password_to_extra(db):
         user_id, email, password = user
         extra = json.dumps({"extra1": email, "extra2": password})
         await db.execute(
-            "UPDATE usermanager.users SET extra = ? WHERE id = ?", (extra, user_id)
+            "UPDATE usermanager.users SET extra = :extra WHERE id = :user_id",
+            {"extra": extra, "user_id": user_id},
         )
 
     # Step 2: Attempt SQLite-style migration (table recreation)
