@@ -84,6 +84,7 @@ async def m003_migrate_email_password_to_extra(db):
         await db.execute("ALTER TABLE usermanager.users_new RENAME TO users;")
         await db.execute("PRAGMA foreign_keys=on;")
     except Exception:
+        await db.execute("COMMIT")
         # Step 3: If PRAGMA fails, assume PostgreSQL and drop columns directly
         await db.execute("ALTER TABLE usermanager.users DROP COLUMN email;")
         await db.execute("ALTER TABLE usermanager.users DROP COLUMN password;")
