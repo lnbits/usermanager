@@ -1,12 +1,12 @@
 from http import HTTPStatus
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query
 from lnbits.core.crud import get_user, update_user_extension
-from lnbits.core.models import Payment
+from lnbits.core.models import Payment, WalletTypeInfo
+from lnbits.core.models.extensions import UserExtension
 from lnbits.db import Filters
 from lnbits.decorators import (
-    WalletTypeInfo,
     parse_filters,
     require_admin_key,
     require_invoice_key,
@@ -115,7 +115,7 @@ async def api_usermanager_users_update(
     user_id: str,
     data: UpdateUserData,
     info: WalletTypeInfo = Depends(require_admin_key),
-) -> UserDetailed:
+) -> Optional[UserDetailed]:
     return await update_usermanager_user(user_id, info.wallet.user, data)
 
 
@@ -156,7 +156,8 @@ async def api_usermanager_activate_extension(
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="User does not exist."
         )
-    await update_user_extension(user_id=userid, extension=extension, active=active)
+    user_ext = UserExtension(user=userid, extension=extension, active=active)
+    await update_user_extension(user_ext)
     return {"extension": "updated"}
 
 
