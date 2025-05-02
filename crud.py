@@ -162,10 +162,10 @@ async def update_usermanager_user(
         cols.append("name = :name")
         values["name"] = data.user_name
     if data.extra:
-        extra_value: Row = await db.fetchone(
+        row: Row = await db.fetchone(
             "SELECT extra FROM usermanager.users WHERE id = :id", {"id": user_id}
         )
-        extra = json.loads(extra_value[0]) if extra_value[0] else {}
+        extra = json.loads(row["extra"]) if row["extra"] else {}
         extra.update(data.extra)
         cols.append("extra = :extra")
         values["extra"] = json.dumps(extra)
