@@ -1,5 +1,5 @@
 {
-  "name": "Usermanger",
+  "name": "Usermanager",
   "short_description": "Users managing users/wallets",
   "tile": "/usermanager/static/image/usermanager.png",
   "min_lnbits_version": "1.0.0",
