@@ -2,6 +2,9 @@
 
 <small>For more about LNBits extension check [this tutorial](https://github.com/lnbits/lnbits/wiki/LNbits-Extensions)</small>
 
+## Important Info
+Development to this extension is frozen. Please use the <code>Users</code> functionality from LNbits core.
+
 ## Make and manage users/wallets
 
 To help developers use LNbits to manage their users, the User Manager extension allows the creation and management of users and wallets.
