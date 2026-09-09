@@ -51,14 +51,35 @@ async def m003_migrate_email_password_to_extra(db):
     """
 
     # Step 1: Migrate email/password to extra column
-    users = await db.fetchall("SELECT id, email, password FROM usermanager.users")
+    users = await db.fetchall(
+        "SELECT id, email, password, extra FROM usermanager.users"
+    )
 
+    # Validate every row before writing: LNbits commits each execute separately.
+    updates = []
     for user in users:
-        user_id, email, password = user
-        extra = json.dumps({"extra1": email, "extra2": password})
+        try:
+            extra = json.loads(user["extra"]) if user["extra"] is not None else {}
+        except (TypeError, ValueError):
+            raise ValueError(
+                "Cannot migrate users: extra must be a JSON object"
+            ) from None
+        if not isinstance(extra, dict):
+            raise ValueError("Cannot migrate users: extra must be a JSON object")
+        for key, value in (("extra1", user["email"]), ("extra2", user["password"])):
+            if key in extra and extra[key] != value:
+                raise ValueError(f"Cannot migrate users: conflicting {key} value")
+            extra[key] = value
+        # Preserve stored text through LNbits' HTML-stripping parameter handling.
+        encoded_extra = (
+            json.dumps(extra).replace("<", "\\u003c").replace("&", "\\u0026")
+        )
+        updates.append({"extra": encoded_extra, "user_id": user["id"]})
+
+    for update in updates:
         await db.execute(
             "UPDATE usermanager.users SET extra = :extra WHERE id = :user_id",
-            {"extra": extra, "user_id": user_id},
+            update,
         )
 
     # Step 2: Attempt SQLite-style migration (table recreation)

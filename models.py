@@ -1,6 +1,6 @@
 import json
 from sqlite3 import Row
-from typing import Optional
+from typing import Any, Optional
 
 from lnbits.db import FilterModel
 from pydantic import BaseModel, Field
@@ -28,7 +28,8 @@ class User(BaseModel):
     id: str
     name: str
     admin: str
-    extra: Optional[dict[str, str]] = Field(default=None)
+    # Stored JSON can contain legacy nulls and structured metadata. Read it unchanged.
+    extra: Optional[dict[str, Any]] = Field(default=None)
 
     @classmethod
     def from_row(cls, row: Row):
