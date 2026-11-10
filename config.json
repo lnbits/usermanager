@@ -1,8 +1,9 @@
 {
+  "version": "1.0.1",
   "name": "Usermanger",
   "short_description": "Users managing users/wallets",
   "tile": "/usermanager/static/image/usermanager.png",
-  "min_lnbits_version": "1.0.0",
+  "min_lnbits_version": "1.7.0",
   "contributors": [
     {
       "name": "Ben Arc",
